@@ -1,1 +1,21 @@
 // TODO
+.headerContainer {
+    padding: 0 2rem;
+}
+
+.headerContent {
+    max-width: 720px;
+    margin: 5rem auto 0;
+    height: 5rem;
+
+    display: flex;
+    align-items: center;
+}
+
+.headerPostContent {
+    max-width: 720px;
+    margin: 2.2rem auto 2.5rem;
+
+    display: flex;
+    align-items: center;
+}

@@ -1,1 +1,78 @@
 // TODO
+.bannerContainer {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+
+  img {
+    max-width: 100%;
+    max-height: 100%;
+    align-items: center;
+  }
+}
+
+.post {
+  max-width: 720px;
+  margin: 5rem auto 2.5rem;
+  display: block;
+  color: var(--gray-100);
+
+  .postIntro {
+    color: var(--gray-200);
+
+    strong {
+      font-size: 3rem;
+      line-height: 2.5rem;
+      color: var(--white);
+    }
+
+    p {
+      margin: 3rem 0;
+      line-height: 1.625rem;
+
+      time {
+        font-size: 1rem;
+        margin-right: 1.5rem;
+      }
+
+      svg {
+        fill: white;
+        margin-right: 0.5rem;
+        width: 1.5rem;
+        height: 1.5rem;
+        vertical-align: top;
+      }
+
+      span {
+        margin-right: 1.5rem;
+      }
+    }
+  }
+
+  .contentBody {
+    margin: 2rem auto 2rem;
+
+    h1 {
+      font-size: 2.5rem;
+      line-height: 2rem;
+      color: var(--white);
+    }
+
+    div {
+      margin: 4rem 0;
+    }
+
+    p,
+    ul {
+      margin: 1.5rem 0;
+    }
+
+    ul {
+      padding-left: 1.5rem;
+
+      li {
+        margin: 0.5rem 0;
+      }
+    }
+  }
+}
