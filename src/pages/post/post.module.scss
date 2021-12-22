@@ -13,7 +13,7 @@
 
 .post {
   max-width: 720px;
-  margin: 5rem auto 2.5rem;
+  margin: 5rem auto 0;
   display: block;
   color: var(--gray-100);
 
@@ -73,6 +73,33 @@
       li {
         margin: 0.5rem 0;
       }
+    }
+  }
+}
+
+.commentsContainer {
+  border-top: 1px solid var(--gray-800);
+  max-width:720px;
+  width: 100%;
+
+  .postsNavigation {
+    margin: 4rem 0;
+    display: grid;
+    grid-template-columns: auto auto;
+    grid-column-gap: 5rem;
+    font-size: 1.25rem;
+
+    a {
+      font-weight: 600;
+      color: var(--pink-800);
+    }
+
+    span:nth-child(1) {
+      text-align: left;
+    }
+
+    span:nth-child(2) {
+      text-align: right;
     }
   }
 }

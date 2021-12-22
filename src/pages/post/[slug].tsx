@@ -1,6 +1,9 @@
+import { useEffect } from 'react'
+
 import { GetStaticPaths, GetStaticProps } from 'next'
 import Head from 'next/head'
 import { useRouter } from 'next/router'
+import Link from 'next/link'
 
 import { getPrismicClient } from '../../services/prismic'
 import Prismic from '@prismicio/client'
@@ -14,10 +17,9 @@ import { AiOutlineClockCircle } from 'react-icons/ai'
 
 import Header from '../../components/Header'
 
-import FormatDate from '../../utils/date-format'
+import { FormatDate, IsAfterDate, IsBeforeDate } from '../../utils/date-format'
 
 import uuid from 'react-uuid'
-
 
 interface Post {
   first_publication_date: string | null
@@ -36,12 +38,52 @@ interface Post {
   }
 }
 
-interface PostProps {
-  post: Post
+interface PostsNavigation {
+  uid: string
+  data: {
+    title: string
+  }
+  text: string
 }
 
-export default function Post ({ post }: PostProps) {
-  
+interface PostProps {
+  post: Post
+  preview: boolean
+  postsNavigation: PostsNavigation[]
+}
+
+// username/repo format for Utterance
+const REPO_NAME = 'Jose-Perigolo/Challenge-3-Ignite-React'
+
+export const useUtterances = (commentNodeId: string) => {
+  useEffect(() => {
+    const scriptParentNode = document.getElementById(commentNodeId)
+    if (!scriptParentNode) return
+
+    // docs - https://utteranc.es/
+    const script = document.createElement('script')
+    script.src = 'https://utteranc.es/client.js'
+    script.async = true
+    script.setAttribute('repo', REPO_NAME)
+    script.setAttribute('issue-term', 'pathname')
+    script.setAttribute('label', 'comment :speech_balloon:')
+    script.setAttribute('theme', 'photon-dark')
+    script.setAttribute('crossorigin', 'anonymous')
+
+    console.log('utteranc')
+
+    scriptParentNode.appendChild(script)
+
+    return () => {
+      // cleanup - remove the older script with previous theme
+      scriptParentNode.removeChild(scriptParentNode.firstChild as Node)
+    }
+  }, [commentNodeId])
+}
+
+const commentNodeId = 'comments'
+
+export default function Post ({ post, preview, postsNavigation }: PostProps) {
   function readingTime () {
     const timeHeading = post.data.content.map(
       post => post.heading?.split(' ').length
@@ -66,6 +108,8 @@ export default function Post ({ post }: PostProps) {
   if (router.isFallback) {
     return <div>Carregando...</div>
   }
+
+  useUtterances(commentNodeId)
 
   return (
     <>
@@ -93,20 +137,46 @@ export default function Post ({ post }: PostProps) {
             </p>
           </section>
           {post.data.content.map(text => {
-              return (
-                <section className={styles.contentBody} key={uuid()}>
-                  <h1>{text.heading}</h1>
-                  <div
-                    className={styles.postContent}
-                    dangerouslySetInnerHTML={{
-                      __html: RichText.asHtml(text.body),
-                    }}
-                  />
-                </section>
-              )
+            return (
+              <section className={styles.contentBody} key={uuid()}>
+                <h1>{text.heading}</h1>
+                <div
+                  className={styles.postContent}
+                  dangerouslySetInnerHTML={{
+                    __html: RichText.asHtml(text.body),
+                  }}
+                />
+              </section>
+            )
           })}
         </article>
+
+        <section className={styles.commentsContainer}>
+          <div className={styles.postsNavigation}>
+            {postsNavigation?.[0].uid &&
+              postsNavigation?.[1].uid &&
+              postsNavigation.map(post => {
+                return (
+                  <span key={post?.uid}>
+                    <p>{post?.data?.title}</p>
+                    <Link href={`/post/${post?.uid}`}>
+                      <a>{post.text}</a>
+                    </Link>
+                  </span>
+                )
+              })}
+          </div>
+          <div id={commentNodeId} />
+        </section>
       </main>
+
+      {preview && (
+        <aside className={commonStyles.exitPreviewLink}>
+          <Link href='/api/exit-preview'>
+            <button>Sair do modo Preview</button>
+          </Link>
+        </aside>
+      )}
     </>
   )
 }
@@ -127,12 +197,58 @@ export const getStaticPaths: GetStaticPaths = async () => {
   }
 }
 
-export const getStaticProps: GetStaticProps = async context => {
-  const { slug } = context.params
+export const getStaticProps: GetStaticProps = async ({
+  params,
+  preview = false,
+  previewData,
+}) => {
+  const { slug } = params
 
   const prismic = getPrismicClient()
 
-  const response = await prismic.getByUID('post', String(slug), {})
+  const response = await prismic.getByUID('post', String(slug), {
+    ref: previewData?.ref ?? null,
+  })
+
+  const navigationResponse = await prismic.query(
+    [Prismic.predicates.at('document.type', 'post')],
+    {
+      fetch: 'post.title',
+      orderings: '[document.first_publication_date]',
+    }
+  )
+
+  const findAfter = navigationResponse.results.find(
+    post =>
+      post.uid !== response.uid &&
+      IsAfterDate(post.first_publication_date, response.first_publication_date)
+  )
+
+  const findBefore = navigationResponse.results.find(
+    post =>
+      post.uid !== response.uid &&
+      IsBeforeDate(post.first_publication_date, response.first_publication_date)
+  )
+
+  const postAfter = {
+    uid: findAfter?.uid || false,
+    data: {
+      title: findAfter?.data.title || '',
+    },
+    text: 'Próximo post',
+  }
+
+  const postBefore = {
+    uid: findBefore?.uid || false,
+    data: {
+      title: findBefore?.data.title || '',
+    },
+    text: 'Post anterior',
+  }
+
+  const postsNavigation = [postBefore, postAfter]
+
+  console.log(postsNavigation)
 
   const post = {
     first_publication_date: response.first_publication_date,
@@ -149,6 +265,6 @@ export const getStaticProps: GetStaticProps = async context => {
   }
 
   return {
-    props: { post },
+    props: { post, preview, postsNavigation },
   }
 }

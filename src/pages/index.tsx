@@ -5,7 +5,7 @@ import Link from 'next/link'
 import Prismic from '@prismicio/client'
 import { getPrismicClient } from '../services/prismic'
 
-import FormatDate from '../utils/date-format'
+import { FormatDate } from '../utils/date-format'
 
 import Header from '../components/Header'
 
@@ -32,6 +32,7 @@ interface PostPagination {
 
 interface HomeProps {
   postsPagination: PostPagination
+  preview: boolean
 }
 
 const FormatPost = (posts: PostPagination) => {
@@ -52,7 +53,10 @@ const FormatPost = (posts: PostPagination) => {
   return { next_page, results }
 }
 
-export default function Home ({ postsPagination }: HomeProps) {
+export default function Home ({
+  postsPagination,
+  preview,
+}: HomeProps): JSX.Element {
   const [loadMore, setLoadMore] = useState<Boolean>(false)
   const [posts, setPosts] = useState(postsPagination)
 
@@ -84,7 +88,7 @@ export default function Home ({ postsPagination }: HomeProps) {
         <title>Home | Desafio 3</title>
       </Head>
 
-      <Header postStyling={false}/>
+      <Header postStyling={false} />
 
       <main className={commonStyles.contentContainer}>
         <div className={styles.posts}>
@@ -107,25 +111,36 @@ export default function Home ({ postsPagination }: HomeProps) {
           )}
         </div>
       </main>
+
+      {preview && (
+        <aside className={commonStyles.exitPreviewLink}>
+          <Link href='/api/exit-preview'>
+            <button>Sair do modo Preview</button>
+          </Link>
+        </aside>
+      )}
     </>
   )
 }
 
-export const getStaticProps: GetStaticProps = async () => {
+export const getStaticProps: GetStaticProps = async ({
+  preview = false,
+  previewData,
+}) => {
   const prismic = getPrismicClient()
 
   const postsResponse = await prismic.query(
     [Prismic.predicates.at('document.type', 'post')],
     {
-      fetch: ['publication.title', 'publication.content'],
       pageSize: 3,
+      ref: previewData?.ref ?? null,
     }
   )
 
   const postsPagination = FormatPost(postsResponse)
 
   return {
-    props: { postsPagination },
+    props: { postsPagination, preview },
   }
   // TODO
 }
